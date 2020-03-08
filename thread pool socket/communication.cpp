@@ -30,12 +30,12 @@ void OrderCompiler(int client_fd, const char * order)
         }
     }
     
-    if( action == "wtf" || action == "WTF")
+    if( action == "wtf" || action == "WTF")     //????
     {
         char temp[] = "FUCK YOURSELF!\r\n";
         send(client_fd, temp, sizeof(temp), 0);
     }
-    else if(action == "getfile")
+    else if(action == "getfile")                //????
     {
         fileTransfer(client_fd, Para.c_str());
     }

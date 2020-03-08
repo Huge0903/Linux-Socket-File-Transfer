@@ -1,7 +1,7 @@
-
-
 #include "socket_client.h"
 #include "communication.h"
+
+using namespace std;
 
 CLIENTPARAM  Client;
 
@@ -9,26 +9,33 @@ int main(void)
 {
     signal(SIGINT, ClientSingal);
 
-    Client.fd = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+    /*获取服务端的IP地址和端口号*/
     struct sockaddr_in Server_addr;
     memset((char *)&Server_addr, 0, sizeof(Server_addr));
+    unsigned short Server_Port = 0;
+    string IP_s;
+    cout << "Please input server IP : ";
+    cin >> IP_s;
+    cout << "Please input server Port : ";
+    cin >> Server_Port;
     Server_addr.sin_family = AF_INET;
-    Server_addr.sin_port = htons(8000);
-    Server_addr.sin_addr.s_addr = inet_addr("192.168.1.50");
+    Server_addr.sin_port = htons(Server_Port);
+    Server_addr.sin_addr.s_addr = inet_addr(IP_s.c_str());
 
+    /*客户端结点建立并连接服务端*/
+    Client.fd = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(connect( Client.fd, (const struct sockaddr * )&Server_addr, sizeof(Server_addr)) == -1)
     {
-        printf("client connect server failed!\r\n");
+        cout << "client connect server failed!" << endl;
         return 0;
     }
-    printf("client connect server success!\r\n");
+    cout << "client connect server success!" << endl;
 
     while(Client.Turndown == false)
     {
-        std::cout << "please input order : ";
-        std::string order;
-        getline(std::cin, order);
+        cout << "please input order : ";    //输入指令
+        string order;
+        getline(cin, order);
         if(order == "exit")
         {
             Client.Turndown = true;
@@ -44,7 +51,7 @@ int main(void)
             Client.fd = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
             if(connect( Client.fd, (const struct sockaddr * )&Server_addr, sizeof(Server_addr)) == -1)
             {
-                printf("client connect server failed!\r\n");
+                cout << "client connect server failed!" << endl;
                 if(Client.Turndown == false)
                     continue;
                 else
@@ -52,11 +59,11 @@ int main(void)
             }
         }
 
-        if(send(Client.fd, order.c_str(), order.size(), 0) == -1)
-            printf("send data failed!\r\n");
-        int revlen = recv(Client.fd, Client.revbuf, REVBUFFLEN - 1, 0);
+        if(send(Client.fd, order.c_str(), order.size(), 0) == -1)          //发送指令
+            cout << "send data failed!" << endl;
+        int revlen = recv(Client.fd, Client.revbuf, REVBUFFLEN - 1, 0);     //接收返回的指令
         Client.revbuf[revlen] = '\0';
-        OrderCompiler(Client.fd, Client.revbuf);
+        OrderCompiler(Client.fd, Client.revbuf);        //解析指令
     }
 
     close(Client.fd);
@@ -75,7 +82,7 @@ void ClientSingal(int sig)
 {
     if(sig == SIGINT)   //关闭服务端
     {
-        printf("ready to close client!\r\n");
+        cout << "ready to close client!" << endl;
         Client.Turndown = true;
     }
 }

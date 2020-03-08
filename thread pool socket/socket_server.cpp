@@ -9,6 +9,8 @@
 #endif
 #endif
 
+using namespace std;
+
 SERVERPARAM Server;
 
 int main(void)
@@ -25,29 +27,29 @@ int main(void)
     Server.fd = socket( Server.addr.sin_family, SOCK_STREAM, IPPROTO_TCP);
     if(Server.fd == -1)
     {
-        printf("socket create failed!\r\n");
+        cout << "socket create failed!" << endl;
         return 0;
     }
     int optval = 1;
     if(setsockopt(Server.fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
-        printf("socket SO_REUSEADDR option set failed!\r\n");
+        cout << "socket SO_REUSEADDR option set failed!" << endl;
     
     if(bind(Server.fd, (struct sockaddr *)&Server.addr, (socklen_t)sizeof(struct sockaddr_in)) == -1)
     {
-        printf("bind failed!\r\n");
+        cout << "bind failed!" << endl;
         return 0;
     }
 
     if(listen(Server.fd, MAX_WAIT_CONNECTION) == -1)
     {
-        printf("listen failed!\r\n");
+        cout << "listen failed!" << endl;
         return 0;
     }
 
     
     if(pthread_create(&server_pthread_id, NULL, server_accept, NULL) == -1)
     {
-        printf("server_accept pthread create failed\r\n");
+        cout << "server_accept pthread create failed!" << endl;
         return 0;
     }
     /********************************************/
@@ -87,7 +89,7 @@ void * server_accept(void * arg)
         CLIENTPARAM * ClientNow = new CLIENTPARAM;  //为客户端申请临时空间
         if(ClientNow == NULL)
         {
-            cout << "server_accept malloc CLIENTPARAM failed!\r\n" << endl;
+            cout << "server_accept malloc CLIENTPARAM failed!" << endl;
             continue;
         }
         
