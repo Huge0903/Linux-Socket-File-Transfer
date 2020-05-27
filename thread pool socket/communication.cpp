@@ -64,9 +64,12 @@ void fileTransfer(int client_fd, const char * filename)
     }
     else
     {
+        struct stat filestat;
+        fstat(file, &filestat);
         char temp[REVBUFFLEN];
-        int len = sprintf(temp, "foundfile %s", filename);
+        int len = sprintf(temp, "foundfile %s %d", filename, filestat.st_size);
         send(client_fd, temp, len, 0);
+        recv(client_fd, temp, REVBUFFLEN - 1, 0);
         sendfile(client_fd, file, 0, INT_MAX);
     }
     close(file);

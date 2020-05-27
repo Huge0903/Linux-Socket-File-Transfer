@@ -23,5 +23,6 @@
 #include <pthread.h>
 #include <limits.h>
 #include <sys/mman.h>
+#include <math.h>
 
 #endif

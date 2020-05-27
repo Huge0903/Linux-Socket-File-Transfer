@@ -1,5 +1,6 @@
 #include "communication.h"
 #include "socket_client.h"
+using namespace std;
 
 /*
  *  @Description: Compiler the receive order
@@ -15,6 +16,7 @@ void OrderCompiler(int client_fd, const char * order)
     int len = s.size();
     std::string action, Para;
     bool start = false;
+    cout << s << endl;
     for(int i = 0; i < len; i++)
     {
         if(start == false && s[i] != ' ')
@@ -22,17 +24,37 @@ void OrderCompiler(int client_fd, const char * order)
             action += s[i];
         }
         else
+        {
             start = true;
+            if(action == "foundfile")
+            {
+                s.erase(s.begin(), s.begin() + i + 1);
+                start = false;
+                break;
+            }
+        }
         
         if(start == true && s[i] != ' ')
-        {
             Para += s[i];
-        }
     }
     
     if(action == "foundfile")
     {
-        fileReceive(client_fd, Para.c_str());
+        cout << "I am here!" << endl;
+        action.clear();
+        Para.clear();
+        for(auto c : s)
+        {
+            if(c != ' ' && start == false)
+                action += c;
+            else
+                start = true;
+            
+            if(start == true && c != ' ')
+                Para += c;
+        }
+        int filesize = stoi(Para);
+        fileReceive(client_fd, action.c_str(), filesize);
     }
     else
     {
@@ -48,12 +70,44 @@ void OrderCompiler(int client_fd, const char * order)
  *  @Author     : Huge
  *  @Data       : 2020.03.06 12:12
 **/
-void fileReceive(int client_fd, const char * filename)
+void fileReceive(int client_fd, const char * filename, int filesize)
 {
-    printf("ready to save file!\r\n");
-    char revbuf[REVBUFFLEN * 10];
-    int file = open( filename, O_RDWR | O_CREAT | O_TRUNC, 666);
+    char temp[] = "client ready, pleas send!";
+    send( client_fd, temp, sizeof(temp), 0);
 
+    int filefd = open( filename, O_RDWR | O_CREAT | O_TRUNC , 666);
+    if(ftruncate( filefd, filesize) != 0)
+    {
+        cout << "failed to ftruncate file!" << endl;
+        return;
+    }
+
+    void * fileaddr = mmap(NULL, filesize, PROT_READ | PROT_WRITE , MAP_SHARED, filefd, 0);
+    if(fileaddr == MAP_FAILED)
+    {
+        cout << "mmap " << filename << " failed!" << endl;
+        return;
+    }
+
+    int revlen = recv(client_fd, fileaddr, filesize, 0);
+    if(revlen == -1)
+    {
+        cout << "recv " << filename << " failed!" << endl;
+        munmap(fileaddr, filesize);
+        return;
+    }
+    
+    
+    if(msync(fileaddr, filesize, MS_SYNC) == -1)
+    {
+        cout << "msync " << filename << " failed!"<< endl;
+    }
+    if(munmap(fileaddr, filesize) == -1)
+    {
+        cout << "munmap " << filename << " failed!"<< endl;
+    }
+    
+    #if 0   //之前的方案使用readline函数，但是逐个去读取socket中的数据太麻烦
     while(1)
     {
         int revlen = readLine(client_fd, revbuf, REVBUFFLEN * 10);
@@ -65,7 +119,8 @@ void fileReceive(int client_fd, const char * filename)
         else
             break;
     }
-    close(file);
+    #endif
+    close(filefd);
 }
 
 ssize_t readLine(int fd, char * buffer, size_t n)
